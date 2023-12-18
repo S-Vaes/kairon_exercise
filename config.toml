@@ -1,2 +1,3 @@
-interval = 5.0
+interval = 10.0
 markets = [ "BTC/USDT", "ETH/USDT", "XRP/USDT", "LTC/USDT", "ADA/USDT", "DOT/USDT", "BNB/USDT", "DOGE/USDT", "LINK/USDT", "XLM/USDT", "UNI/USDT", "THETA/USDT", "VET/USDT", "AAVE/USDT", "EOS/USDT", "TRX/USDT", "MKR/USDT", "XTZ/USDT", "FIL/USDT", "SOL/USDT" ]
+db_file = "exchange_data.sqlite"

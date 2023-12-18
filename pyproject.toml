@@ -13,21 +13,28 @@ rich = "^13.7.0"
 websockets = "^12.0"
 aiostream = "^0.5.2"
 ipython = "^8.18.1"
+aiohttp = "^3.9.1"
+sqlmodel = "^0.0.14"
+numpy = "^1.26.2"
+pandas = "^2.1.4"
+matplotlib = "^3.8.2"
+seaborn = "^0.13.0"
+
 
 [tool.poetry.scripts]
 ex = "kairon_exercise.main:start"
 
 [tool.poetry.group.dev.dependencies]
-# sexpdata = "1.0.0"
 python-lsp-server = "^1.9.0"
 python-lsp-ruff = "^2.0.0"
 pylsp-mypy = "^0.6.8"
 pytest = "^7.4.3"
-# ruff = "0.1.5"
-# importmagic = "^0.1.7"
-# epc = "^0.0.5"
-# black = "^23.11.0"
-# mypy = "1.5.1"
+importmagic = "^0.1.7"
+epc = "^0.0.5"
+black = "^23.12.0"
+mypy = "^1.7.1"
+sexpdata = "1.0.0"
+jupyter = "^1.0.0"
 
 [build-system]
 requires = ["poetry-core"]

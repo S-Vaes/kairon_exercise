@@ -1,23 +1,54 @@
-import asyncio
 import websockets
 import json
-from datetime import datetime
 from kairon_exercise.exchange_interface.common_functions import (
-    MarketData,
     TickerData,
     TradeData,
-    calculate_spread_and_slippage,
+    ExchangeBase,
 )
 
 
-class Binance:
-    def __init__(self, markets: list[str], update_interval: float = 1):
+class Binance(ExchangeBase):
+    """Class representing a Binance WebSocket connection for market data.
+
+    Args:
+    ----
+        markets (list[str]): List of market symbols to subscribe to.
+        interval (float): Time interval in seconds between data updates.
+
+    Attributes:
+    ----------
+        markets (list[str]): List of market symbols.
+        websocket (websockets.websocket): WebSocket connection to Binance.
+        market_data (dict[str, MarketData]): Dictionary to store market data.
+        interval (float): Time interval in seconds between data updates.
+
+    Methods:
+    -------
+        _connect(self) -> bool:
+            Connect to the Binance WebSocket.
+
+        _update_market_data(self):
+            Continuously update market data from WebSocket messages.
+
+    Example:
+    -------
+    async with Binance(["BTCUSDT", "ETHUSDT"], 5.0) as binance_ws:
+        async for datapoint in binance_ws.get_datapoint():
+            print(datapoint)
+    """
+
+    def __init__(self, markets: list[str], interval: float, source: str) -> None:
+        super().__init__(markets, interval, source)
         self.markets = markets
-        self.websocket: websockets.websocket = None
-        self.market_data = {market: MarketData(TickerData(0, 0), [], "") for market in markets}
-        self.interval: float = update_interval
 
     async def _connect(self) -> bool:
+        """Connect to the Binance WebSocket.
+
+        Returns
+        -------
+            bool: True if the connection is successful, False otherwise.
+
+        """
         binance_url = "wss://stream.binance.com:9443/stream?streams="
         streams = []
         for market in self.markets:
@@ -31,10 +62,10 @@ class Binance:
             print("Failed to connect to Binance WebSocket.")
             return False
 
-        _ = asyncio.create_task(self._update_market_data())
         return True
 
     async def _update_market_data(self):
+        """Continuously update market data from WebSocket messages."""
         while True:
             try:
                 message = await self.websocket.recv()
@@ -47,34 +78,11 @@ class Binance:
                 stream = data["stream"]
                 if "@ticker" in stream:
                     market_name = stream.split("@")[0]
-                    ticker_data = TickerData(float(data["data"]["a"]), float(data["data"]["b"]))
+                    ticker_data = TickerData(
+                        float(data["data"]["a"]), float(data["data"]["b"])
+                    )
                     self.market_data[market_name].ticker = ticker_data
                 elif "@trade" in stream:
                     market_name = stream.split("@")[0]
                     trade_data = TradeData(float(data["data"]["p"]))
                     self.market_data[market_name].trade_history.append(trade_data)
-
-    async def get_datapoint(self):
-        while True:
-            await asyncio.sleep(self.interval)
-            timestamp = datetime.now().isoformat()
-            for market_data in self.market_data.values():
-                market_data.timestamp = timestamp
-            yield {
-                "source": "binance",
-                "data": {
-                    market: calculate_spread_and_slippage(market_data)
-                    for market, market_data in self.market_data.items()
-                },
-            }
-            [market_data.trade_history.clear() for market_data in self.market_data.values()]
-
-    async def __aenter__(self):
-        if await self._connect():
-            return self
-        raise Exception("Failed to connect to Binance WebSocket")
-
-    async def __aexit__(self, exc_type, exc_value, traceback):
-        if self.websocket:
-            print("Exiting")
-            await self.websocket.close()
